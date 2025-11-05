@@ -1,0 +1,55 @@
+{
+  "name": "arc-ai-content-agent",
+  "version": "1.0.0",
+  "description": "AI Agent for automated content payments on Arc blockchain using USDC",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
+    "tail": "wrangler tail",
+    "tail:errors": "wrangler tail --status error",
+    "generate-secret": "node scripts/generateEntitySecret.js",
+    "register-secret": "node scripts/registerEntitySecret.js",
+    "setup": "npm install && cp .dev.vars.example .dev.vars && echo 'Setup complete! Edit .dev.vars with your credentials.'",
+    "create-wallet": "node scripts/createWallet.js",
+    "get-address": "node scripts/getAddress.js",
+    "check-deployment": "node scripts/checkDeployment.js",
+    "compile": "hardhat compile",
+    "deploy:contract:testnet": "hardhat run scripts/deploy.js --network circle",
+    "deploy:subscription": "node scripts/deploySubscription.js",
+    "deploy:contract:mainnet": "hardhat run scripts/deploy.js --network circle",
+    "interact": "hardhat run scripts/interact.js --network arcTestnet",
+    "test:contract": "hardhat test",
+    "node": "hardhat node"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "arc",
+    "usdc",
+    "cloudflare",
+    "workers",
+    "blockchain",
+    "circle",
+    "payments",
+    "content",
+    "hackathon"
+  ],
+  
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@openzeppelin/contracts": "^5.4.0",
+    "dotenv": "^17.2.3",
+    "ethers": "^6.15.0",
+    "hardhat": "^2.26.5",
+    "wrangler": "^4.45.3"
+  },
+  "dependencies": {
+    "@circle-fin/developer-controlled-wallets": "^9.2.0",
+    "openai": "^4.20.0"
+  }
+}

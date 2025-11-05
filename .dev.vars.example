@@ -1,0 +1,59 @@
+# Local Development Environment Variables
+# IMPORTANT: Copy this to .dev.vars and fill with YOUR credentials
+# DO NOT commit .dev.vars to git (already in .gitignore)
+
+# ============================================
+# Circle API Credentials (REQUIRED)
+# ============================================
+# Get your credentials from: https://console.circle.com/
+# Steps:
+# 1. Create an account at Circle Developer Console
+# 2. Generate your API Key
+# 3. Generate Entity Secret (use: npm run generate-secret)
+# 4. Register Entity Secret (use: npm run register-secret)
+
+CIRCLE_API_KEY=YOUR_CIRCLE_API_KEY_HERE
+ENTITY_SECRET=YOUR_ENTITY_SECRET_HERE
+
+# ============================================
+# OpenAI API Key (OPTIONAL)
+# ============================================
+# Only needed if you want to use OpenAI instead of Workers AI
+# Get from: https://platform.openai.com/api-keys
+# Leave empty to use Cloudflare Workers AI (free tier: 10,000/day)
+
+OPENAI_API_KEY=
+
+# ============================================
+# Arc Blockchain Configuration
+# ============================================
+# USDC Token Address on Arc Sepolia Testnet
+# This default value is correct for testing
+USDC_ADDRESS=0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d
+
+# ============================================
+# Agent Settings
+# ============================================
+# Minimum payment amount in USD
+PAYMENT_THRESHOLD=0.10
+
+# Minimum quality score (0.0 - 1.0) for content to receive payment
+MIN_QUALITY_SCORE=0.7
+
+# Environment name
+ENVIRONMENT=development
+
+# ============================================
+# PRODUCTION DEPLOYMENT NOTES
+# ============================================
+# For production, DO NOT use .dev.vars
+# Instead, use wrangler secrets:
+#
+# wrangler secret put CIRCLE_API_KEY
+# wrangler secret put ENTITY_SECRET
+# wrangler secret put OPENAI_API_KEY (optional)
+# wrangler secret put USDC_ADDRESS
+# wrangler secret put PAYMENT_THRESHOLD
+# wrangler secret put MIN_QUALITY_SCORE
+#
+# Secrets are encrypted and never visible in logs or source code
