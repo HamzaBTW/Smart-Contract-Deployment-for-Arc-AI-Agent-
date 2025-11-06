@@ -8,6 +8,12 @@ Install Hardhat and dependencies:
 npm install --save-dev hardhat@^2.26.0 @nomicfoundation/hardhat-toolbox @openzeppelin/contracts ethers dotenv --legacy-peer-deps
 ```
 
+**Additional dependencies for deployment:**
+
+```powershell
+npm install --save-dev "@nomicfoundation/hardhat-ignition@^0.15.15" "@nomicfoundation/ignition-core@^0.15.14"
+```
+
 ## 🔧 Configuration
 
 1. **Copy environment template:**
