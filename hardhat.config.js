@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import "@nomicfoundation/hardhat-toolbox";
 dotenv.config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
