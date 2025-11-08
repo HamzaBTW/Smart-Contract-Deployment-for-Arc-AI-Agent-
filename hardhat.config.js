@@ -14,11 +14,19 @@ export default {
     },
   },
   networks: {
-    // Circle Blockchain Configuration
-    circle: {
-      url: process.env.ARC_TESTNET_RPC || "https://rpc.circle.com",
+    // Arc Testnet (Official)
+    "arc-testnet": {
+      url: process.env.ARC_TESTNET_RPC_URL || "https://rpc.testnet.arc.network",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       gasPrice: "auto",
+      chainId: 5042002, // Arc's chain ID
+    },
+    // Circle Blockchain Configuration (Legacy - use arc-testnet instead)
+    circle: {
+      url: process.env.ARC_TESTNET_RPC_URL || "https://rpc.testnet.arc.network",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      gasPrice: "auto",
+      chainId: 5042002, // Arc's chain ID
     },
     // Local Development
     hardhat: {

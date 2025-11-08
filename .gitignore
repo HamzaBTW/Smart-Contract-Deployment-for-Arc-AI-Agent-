@@ -6,6 +6,9 @@
 .env.local
 .env.production
 
+# EXCEPTION: Allow demo environment template (safe to commit)
+!demo/.env.demo
+
 # Circle recovery files (CRITICAL - Never commit!)
 recovery_file*.dat
 recovery_file.dat
@@ -99,4 +102,8 @@ artifacts/
 typechain-types/
 .env.hardhat
 deployments/
+
+# Demo-specific (ignore if you customize these with real data)
+# Note: demo/.env.demo is safe to commit (contains public test keys)
+# But if you modify it with real keys, it will be caught by *.env pattern above
 

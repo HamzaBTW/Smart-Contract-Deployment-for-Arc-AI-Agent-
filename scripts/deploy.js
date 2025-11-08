@@ -14,10 +14,20 @@ async function main() {
   const usdcAddress = process.env.USDC_ADDRESS_TESTNET || "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
   console.log("💵 USDC Token Address:", usdcAddress);
 
+  // AI Agent wallet address
+  const agentWallet = process.env.AGENT_WALLET_ADDRESS;
+  if (!agentWallet) {
+    console.error("❌ AGENT_WALLET_ADDRESS not found in .env");
+    console.log("\n📝 Please add your AI agent wallet address to .env:");
+    console.log("AGENT_WALLET_ADDRESS=0xYourAgentWalletAddress\n");
+    process.exit(1);
+  }
+  console.log("🤖 AI Agent Wallet:", agentWallet);
+
   // Deploy contract
   console.log("\n⏳ Deploying SubscriptionManager...");
   const SubscriptionManager = await hre.ethers.getContractFactory("SubscriptionManager");
-  const subscriptionManager = await SubscriptionManager.deploy(usdcAddress);
+  const subscriptionManager = await SubscriptionManager.deploy(usdcAddress, agentWallet);
 
   await subscriptionManager.waitForDeployment();
   const contractAddress = await subscriptionManager.getAddress();
@@ -27,6 +37,7 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════");
   console.log("Contract Address:", contractAddress);
   console.log("USDC Token:", usdcAddress);
+  console.log("AI Agent Wallet:", agentWallet);
   console.log("Network:", hre.network.name);
   console.log("Deployer:", deployer.address);
   console.log("═══════════════════════════════════════════════════════════");
@@ -42,7 +53,7 @@ async function main() {
     try {
       await hre.run("verify:verify", {
         address: contractAddress,
-        constructorArguments: [usdcAddress],
+        constructorArguments: [usdcAddress, agentWallet],
       });
       console.log("✅ Contract verified!");
     } catch (error) {

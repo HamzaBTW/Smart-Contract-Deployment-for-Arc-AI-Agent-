@@ -23,24 +23,44 @@ npm install
 npm run generate-secret
 npm run register-secret
 
-# 4. Compile smart contracts
+# 4. 🤖 Setup wallets for smart contracts (optional)
+npm run check-wallet    # Verify wallet setup
+npm run test:rpc        # Test Arc network connection
+
+# 5. Compile smart contracts (optional)
 npm run compile
 
-# 5. Configure KV namespaces
+# 6. Configure KV namespaces
 wrangler kv:namespace create "USER_PREFS"
 wrangler kv:namespace create "PAYMENT_HISTORY"
 wrangler kv:namespace create "SUBSCRIPTIONS"
 # Update IDs in wrangler.toml
 
-# 6. Set secrets
+# 7. Set secrets
 wrangler secret put CIRCLE_API_KEY
 wrangler secret put ENTITY_SECRET
 
-# 7. Deploy!
+# 8. Deploy!
 npm run deploy
 ```
 
 ✅ **Live at:** `https://arc-ai-agent.your-subdomain.workers.dev`
+
+### Optional: Deploy Smart Contracts with AI Agent Autonomy
+
+```bash
+# 1. Configure .env with wallet details
+PRIVATE_KEY=your_deployer_private_key
+AGENT_WALLET_ADDRESS=0xYourAgentWalletAddress
+
+# 2. Get testnet USDC from faucet
+# Visit: https://faucet.arc.foundation/
+
+# 3. Deploy contract
+npm run deploy:contract:testnet
+
+# 📖 Full guide: contracts/AI_AGENT_SETUP.md
+```
 
 ---
 
@@ -50,6 +70,7 @@ npm run deploy
 - **[QUICK_START.md](./QUICK_START.md)** - 5-minute deployment guide
 - **[API.md](./API.md)** - API endpoints reference
 - **[contracts/README.md](./contracts/README.md)** - Smart contract deployment guide
+- **[contracts/AI_AGENT_SETUP.md](./contracts/AI_AGENT_SETUP.md)** - 🤖 AI Agent Autonomy setup guide
 
 ---
 
@@ -63,6 +84,7 @@ npm run deploy
 ✅ **Global Edge** - 300+ cities worldwide  
 ✅ **Auto-scaling** - Handles millions of requests  
 ✅ **15+ API Endpoints** - Complete REST API  
+✅ **🤖 AI Agent Autonomy** - Decentralized autonomous payments  
 ✅ **Optional Smart Contracts** - Available for advanced use cases
 
 ---
@@ -126,6 +148,50 @@ const balance = await paymentService.getBalance(walletId);
 - On-chain escrow
 - Complex payment logic
 - Decentralized governance
+- **🤖 AI Agent Autonomy** - True decentralized autonomous payments
+
+#### 🤖 AI Agent Autonomy Pattern
+
+Our smart contracts implement a unique **agent-only modifier** pattern:
+
+```solidity
+modifier onlyAgent() {
+    if (msg.sender != agentWallet) revert UnauthorizedAgent();
+    _;
+}
+```
+
+**What This Means:**
+- ✅ Only the designated AI agent wallet can trigger payments
+- ✅ True autonomy - AI operates independently without manual intervention
+- ✅ Security - Unauthorized wallets cannot trigger payments
+- ✅ Accountability - All actions traceable to the agent's wallet
+- ✅ User control - Users can still cancel subscriptions anytime
+
+**Setup Requirements:**
+1. **Deployer Wallet** - Funds deployment, owns contract
+2. **AI Agent Wallet** - Authorized to trigger automated payments
+3. **USDC Token Address** - Payment token on Arc
+
+**Quick Setup:**
+```bash
+# 1. Check wallet setup and balances
+npm run check-wallet
+
+# 2. Test Arc Testnet RPC connection
+npm run test:rpc
+
+# 3. Configure .env
+PRIVATE_KEY=your_deployer_private_key
+AGENT_WALLET_ADDRESS=0xYourAgentWalletAddress
+USDC_ADDRESS_TESTNET=0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d
+
+# 4. Compile and deploy
+npm run compile
+npm run deploy:contract:testnet
+```
+
+📖 **[Complete AI Agent Setup Guide →](./contracts/AI_AGENT_SETUP.md)**
 
 **If needed, contracts are ready to deploy:**
 ```bash
@@ -171,6 +237,7 @@ OpenAI API    Circle Blockchain  Persistent Data
 - Solidity ^0.8.20 (for advanced features)
 - OpenZeppelin Contracts
 - Hardhat (Development framework)
+- 🤖 AI Agent Autonomy Pattern - Decentralized autonomous payments
 - Available but not required for core functionality
 
 **Frontend:**
@@ -216,13 +283,17 @@ arc-ai-agent/
 │   └── services/          # Service modules
 │       ├── openai.service.js
 │       ├── payment.service.js
-│       └── subscription.service.js
+│       ├── subscription.service.js
+│       └── ai-payment-agent.ts  # 🤖 AI Agent for smart contracts
 ├── contracts/             # Smart contracts
-│   ├── SubscriptionManager.sol  # Main subscription contract
-│   └── README.md          # Contract deployment guide
+│   ├── SubscriptionManager.sol  # Main subscription contract (with AI agent pattern)
+│   ├── README.md          # Contract deployment guide
+│   └── AI_AGENT_SETUP.md  # 🤖 AI Agent Autonomy setup guide
 ├── scripts/               # Deployment & utility scripts
 │   ├── deploy.js          # Contract deployment
 │   ├── interact.js        # Contract interaction
+│   ├── checkWallet.js     # Wallet setup verification
+│   ├── testRpcConnection.js  # Test Arc RPC URLs
 │   ├── generateEntitySecret.js
 │   └── registerEntitySecret.js
 ├── frontend/              # React frontend
@@ -263,6 +334,8 @@ npm run register-secret      # Register with Circle
 **Smart Contracts:**
 ```bash
 npm run compile              # Compile Solidity contracts
+npm run check-wallet         # 🤖 Check wallet setup & balances
+npm run test:rpc             # 🤖 Test Arc Testnet RPC connection
 npm run deploy:contract:testnet  # Deploy to Arc testnet
 npm run deploy:contract:mainnet  # Deploy to Arc mainnet
 npm run interact             # Interact with deployed contract
@@ -308,7 +381,114 @@ Runs on Cloudflare's edge network:
 
 ---
 
-## 🤝 Contributing
+## � AI Agent Autonomy Pattern
+
+### What Makes This Special?
+
+Our smart contracts implement a **unique autonomous agent pattern** that enables true AI-driven payments:
+
+```solidity
+// Only the AI agent wallet can trigger payments
+modifier onlyAgent() {
+    if (msg.sender != agentWallet) revert UnauthorizedAgent();
+    _;
+}
+```
+
+### Key Features
+
+**🔐 Decentralized Autonomy**
+- AI agent operates independently
+- No central server controls payments
+- Transparent on-chain actions
+
+**🛡️ Security & Control**
+- Only authorized agent wallet can trigger payments
+- Users can cancel subscriptions anytime
+- Owner can update agent wallet if compromised
+
+**💰 Automated Payments**
+- Subscriptions processed automatically
+- Tips sent based on content consumption
+- Micropayments for pay-per-view content
+
+### How It Works
+
+1. **Deploy Contract** with agent wallet address
+2. **AI Agent Monitors** user behavior and content consumption
+3. **Smart Contract Enforces** that only agent can trigger payments
+4. **Users Maintain Control** - can cancel anytime
+
+### Setup Process
+
+**Prerequisites:**
+- MetaMask wallet (for deployment)
+- AI Agent wallet address (can be same as deployer for testing)
+- Testnet USDC (from Arc faucet)
+
+**Quick Commands:**
+```bash
+# 1. Verify wallet setup
+npm run check-wallet
+
+# 2. Test network connection
+npm run test:rpc
+
+# 3. Configure environment (.env)
+PRIVATE_KEY=your_deployer_key
+AGENT_WALLET_ADDRESS=0xYourAgentAddress
+USDC_ADDRESS_TESTNET=0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d
+
+# 4. Deploy with agent autonomy
+npm run compile
+npm run deploy:contract:testnet
+```
+
+### Backend Integration
+
+```typescript
+import { AIPaymentAgent } from './services/ai-payment-agent';
+
+// Initialize with agent credentials
+const agent = new AIPaymentAgent(
+  'https://rpc-testnet.arc.foundation',
+  process.env.AGENT_PRIVATE_KEY,
+  process.env.CONTRACT_ADDRESS,
+  contractABI
+);
+
+// AI creates subscription automatically
+await agent.createSubscriptionForUser(
+  userAddress,
+  creatorAddress,
+  '5.00', // 5 USDC/month
+  30      // 30 days
+);
+
+// AI sends tip based on engagement
+await agent.sendAutomatedTip(
+  userAddress,
+  creatorAddress,
+  '0.25',
+  'content-id-123'
+);
+```
+
+### Benefits
+
+| Feature | Traditional | AI Agent Autonomy |
+|---------|-------------|-------------------|
+| **Control** | Manual approval | Autonomous AI |
+| **Speed** | Slow (human in loop) | Instant (automated) |
+| **Security** | Centralized | Decentralized |
+| **Transparency** | Off-chain | On-chain |
+| **User Trust** | Platform-dependent | Smart contract enforced |
+
+📖 **[Complete Setup Guide →](./contracts/AI_AGENT_SETUP.md)**
+
+---
+
+## �🤝 Contributing
 
 Contributions welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md)
 

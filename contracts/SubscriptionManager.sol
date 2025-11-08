@@ -15,9 +15,26 @@ contract SubscriptionManager is ReentrancyGuard, Ownable {
     // USDC token interface
     IERC20 public immutable usdcToken;
     
+    // 🤖 AI Agent wallet address - only this wallet can trigger automated payments
+    address public agentWallet;
+    
     // Platform fee (in basis points, e.g., 250 = 2.5%)
     uint256 public platformFee = 250;
     uint256 public constant FEE_DENOMINATOR = 10000;
+    
+    // Custom errors for gas efficiency
+    error UnauthorizedAgent();
+    error UnauthorizedUser();
+    error InvalidAddress();
+    error InvalidAmount();
+    error InvalidInterval();
+    error SubscriptionNotActive();
+    error SubscriptionAlreadyExists();
+    error PaymentNotDue();
+    error NoBalanceToWithdraw();
+    error TransferFailed();
+    error EscrowAlreadyExists();
+    error EscrowAlreadyReleased();
     
     // Subscription structure
     struct Subscription {
@@ -100,52 +117,86 @@ contract SubscriptionManager is ReentrancyGuard, Ownable {
     
     event PlatformFeeUpdated(uint256 oldFee, uint256 newFee);
     
-    /**
-     * @notice Constructor
-     * @param _usdcToken Address of USDC token on Arc
-     */
-    constructor(address _usdcToken) Ownable(msg.sender) {
-        require(_usdcToken != address(0), "Invalid USDC address");
-        usdcToken = IERC20(_usdcToken);
+    event AgentWalletUpdated(
+        address indexed oldAgent,
+        address indexed newAgent
+    );
+    
+    // 🔐 Modifier: Only AI agent can call
+    modifier onlyAgent() {
+        if (msg.sender != agentWallet) revert UnauthorizedAgent();
+        _;
+    }
+    
+    // 🔐 Modifier: Only subscription owner can call
+    modifier onlySubscriber(bytes32 subscriptionId) {
+        if (msg.sender != subscriptions[subscriptionId].subscriber) revert UnauthorizedUser();
+        _;
     }
     
     /**
-     * @notice Create a new subscription
+     * @notice Constructor
+     * @param _usdcToken Address of USDC token on Arc
+     * @param _agentWallet Address of AI agent wallet that will trigger automated payments
+     */
+    constructor(address _usdcToken, address _agentWallet) Ownable(msg.sender) {
+        if (_usdcToken == address(0)) revert InvalidAddress();
+        if (_agentWallet == address(0)) revert InvalidAddress();
+        usdcToken = IERC20(_usdcToken);
+        agentWallet = _agentWallet;
+        emit AgentWalletUpdated(address(0), _agentWallet);
+    }
+    
+    /**
+     * @notice Update the AI agent wallet address
+     * @dev Only owner can change this - important security control
+     * @param _newAgent New agent wallet address
+     */
+    function setAgentWallet(address _newAgent) external onlyOwner {
+        if (_newAgent == address(0)) revert InvalidAddress();
+        address oldAgent = agentWallet;
+        agentWallet = _newAgent;
+        emit AgentWalletUpdated(oldAgent, _newAgent);
+    }
+    
+    /**
+     * @notice AI Agent creates a subscription on behalf of a user
+     * @dev User must have approved USDC spending first. Only agent can call.
+     * @param subscriber Address of the user subscribing
      * @param creator Address of the content creator
      * @param amount Subscription amount in USDC (6 decimals)
      * @param interval Payment interval in seconds (e.g., 30 days)
      * @return subscriptionId Unique identifier for the subscription
      */
     function createSubscription(
+        address subscriber,
         address creator,
         uint256 amount,
         uint256 interval
-    ) external nonReentrant returns (bytes32) {
-        require(creator != address(0), "Invalid creator address");
-        require(amount > 0, "Amount must be greater than 0");
-        require(interval >= 1 days, "Interval must be at least 1 day");
+    ) external onlyAgent nonReentrant returns (bytes32) {
+        if (creator == address(0)) revert InvalidAddress();
+        if (subscriber == address(0)) revert InvalidAddress();
+        if (amount == 0) revert InvalidAmount();
+        if (interval < 1 days) revert InvalidInterval();
         
         // Generate unique subscription ID
         bytes32 subscriptionId = keccak256(
-            abi.encodePacked(msg.sender, creator, block.timestamp, amount)
+            abi.encodePacked(subscriber, creator, block.timestamp, amount)
         );
         
-        require(subscriptions[subscriptionId].subscriber == address(0), "Subscription already exists");
+        if (subscriptions[subscriptionId].subscriber != address(0)) revert SubscriptionAlreadyExists();
         
         // Process first payment
         uint256 platformCut = (amount * platformFee) / FEE_DENOMINATOR;
         uint256 creatorAmount = amount - platformCut;
         
-        require(
-            usdcToken.transferFrom(msg.sender, address(this), amount),
-            "USDC transfer failed"
-        );
+        if (!usdcToken.transferFrom(subscriber, address(this), amount)) revert TransferFailed();
         
         creatorBalances[creator] += creatorAmount;
         
         // Create subscription
         subscriptions[subscriptionId] = Subscription({
-            subscriber: msg.sender,
+            subscriber: subscriber,
             creator: creator,
             amount: amount,
             interval: interval,
@@ -155,13 +206,13 @@ contract SubscriptionManager is ReentrancyGuard, Ownable {
             paymentsCount: 1
         });
         
-        userSubscriptions[msg.sender].push(subscriptionId);
+        userSubscriptions[subscriber].push(subscriptionId);
         creatorSubscriptions[creator].push(subscriptionId);
         
-        emit SubscriptionCreated(subscriptionId, msg.sender, creator, amount, interval);
+        emit SubscriptionCreated(subscriptionId, subscriber, creator, amount, interval);
         emit SubscriptionPaymentProcessed(
             subscriptionId,
-            msg.sender,
+            subscriber,
             creator,
             amount,
             block.timestamp + interval
@@ -171,23 +222,21 @@ contract SubscriptionManager is ReentrancyGuard, Ownable {
     }
     
     /**
-     * @notice Process subscription payment (can be called by anyone)
+     * @notice AI Agent processes recurring subscription payment
+     * @dev Only callable by agent when payment is due. Automatically processes payment.
      * @param subscriptionId The subscription to process
      */
-    function processSubscriptionPayment(bytes32 subscriptionId) external nonReentrant {
+    function processSubscriptionPayment(bytes32 subscriptionId) external onlyAgent nonReentrant {
         Subscription storage sub = subscriptions[subscriptionId];
         
-        require(sub.active, "Subscription not active");
-        require(block.timestamp >= sub.nextPaymentDue, "Payment not due yet");
+        if (!sub.active) revert SubscriptionNotActive();
+        if (block.timestamp < sub.nextPaymentDue) revert PaymentNotDue();
         
         // Process payment
         uint256 platformCut = (sub.amount * platformFee) / FEE_DENOMINATOR;
         uint256 creatorAmount = sub.amount - platformCut;
         
-        require(
-            usdcToken.transferFrom(sub.subscriber, address(this), sub.amount),
-            "USDC transfer failed"
-        );
+        if (!usdcToken.transferFrom(sub.subscriber, address(this), sub.amount)) revert TransferFailed();
         
         creatorBalances[sub.creator] += creatorAmount;
         
@@ -207,16 +256,14 @@ contract SubscriptionManager is ReentrancyGuard, Ownable {
     
     /**
      * @notice Cancel a subscription
+     * @dev Can be called by subscriber or contract owner
      * @param subscriptionId The subscription to cancel
      */
     function cancelSubscription(bytes32 subscriptionId) external {
         Subscription storage sub = subscriptions[subscriptionId];
         
-        require(
-            msg.sender == sub.subscriber || msg.sender == owner(),
-            "Not authorized"
-        );
-        require(sub.active, "Subscription already inactive");
+        if (msg.sender != sub.subscriber && msg.sender != owner()) revert UnauthorizedUser();
+        if (!sub.active) revert SubscriptionNotActive();
         
         sub.active = false;
         
@@ -224,31 +271,32 @@ contract SubscriptionManager is ReentrancyGuard, Ownable {
     }
     
     /**
-     * @notice Send a tip to a creator
+     * @notice AI Agent sends a tip from user to creator
+     * @dev Triggered when AI detects user consumed valuable content. Only agent can call.
+     * @param user Address of the user sending the tip
      * @param creator Address of the creator
      * @param amount Tip amount in USDC
      * @param contentId Optional content identifier
      */
     function sendTip(
+        address user,
         address creator,
         uint256 amount,
         string calldata contentId
-    ) external nonReentrant {
-        require(creator != address(0), "Invalid creator address");
-        require(amount > 0, "Amount must be greater than 0");
+    ) external onlyAgent nonReentrant {
+        if (creator == address(0)) revert InvalidAddress();
+        if (user == address(0)) revert InvalidAddress();
+        if (amount == 0) revert InvalidAmount();
         
         uint256 platformCut = (amount * platformFee) / FEE_DENOMINATOR;
         uint256 creatorAmount = amount - platformCut;
         
-        require(
-            usdcToken.transferFrom(msg.sender, address(this), amount),
-            "USDC transfer failed"
-        );
+        if (!usdcToken.transferFrom(user, address(this), amount)) revert TransferFailed();
         
         creatorBalances[creator] += creatorAmount;
         totalTipsReceived[creator] += amount;
         
-        emit TipSent(msg.sender, creator, amount, contentId);
+        emit TipSent(user, creator, amount, contentId);
     }
     
     /**
@@ -263,19 +311,16 @@ contract SubscriptionManager is ReentrancyGuard, Ownable {
         uint256 amount,
         string calldata contentId
     ) external nonReentrant returns (bytes32) {
-        require(creator != address(0), "Invalid creator address");
-        require(amount > 0, "Amount must be greater than 0");
+        if (creator == address(0)) revert InvalidAddress();
+        if (amount == 0) revert InvalidAmount();
         
         bytes32 escrowId = keccak256(
             abi.encodePacked(msg.sender, creator, contentId, block.timestamp)
         );
         
-        require(escrows[escrowId].payer == address(0), "Escrow already exists");
+        if (escrows[escrowId].payer != address(0)) revert EscrowAlreadyExists();
         
-        require(
-            usdcToken.transferFrom(msg.sender, address(this), amount),
-            "USDC transfer failed"
-        );
+        if (!usdcToken.transferFrom(msg.sender, address(this), amount)) revert TransferFailed();
         
         escrows[escrowId] = Escrow({
             payer: msg.sender,
@@ -298,11 +343,8 @@ contract SubscriptionManager is ReentrancyGuard, Ownable {
     function releaseMicropayment(bytes32 escrowId) external nonReentrant {
         Escrow storage escrow = escrows[escrowId];
         
-        require(
-            msg.sender == escrow.payer || msg.sender == owner(),
-            "Not authorized"
-        );
-        require(!escrow.released, "Already released");
+        if (msg.sender != escrow.payer && msg.sender != owner()) revert UnauthorizedUser();
+        if (escrow.released) revert EscrowAlreadyReleased();
         
         uint256 platformCut = (escrow.amount * platformFee) / FEE_DENOMINATOR;
         uint256 creatorAmount = escrow.amount - platformCut;
@@ -318,14 +360,11 @@ contract SubscriptionManager is ReentrancyGuard, Ownable {
      */
     function withdrawCreatorBalance() external nonReentrant {
         uint256 balance = creatorBalances[msg.sender];
-        require(balance > 0, "No balance to withdraw");
+        if (balance == 0) revert NoBalanceToWithdraw();
         
         creatorBalances[msg.sender] = 0;
         
-        require(
-            usdcToken.transfer(msg.sender, balance),
-            "USDC transfer failed"
-        );
+        if (!usdcToken.transfer(msg.sender, balance)) revert TransferFailed();
         
         emit CreatorWithdrawal(msg.sender, balance);
     }
@@ -374,9 +413,6 @@ contract SubscriptionManager is ReentrancyGuard, Ownable {
      * @param amount Amount to withdraw
      */
     function withdrawPlatformFees(uint256 amount) external onlyOwner nonReentrant {
-        require(
-            usdcToken.transfer(owner(), amount),
-            "USDC transfer failed"
-        );
+        if (!usdcToken.transfer(owner(), amount)) revert TransferFailed();
     }
 }

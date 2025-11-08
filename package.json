@@ -10,6 +10,8 @@
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production",
     "tail": "wrangler tail",
+    "check-wallet": "node scripts/checkWallet.js",
+    "test:rpc": "node scripts/testRpcConnection.js",
     "tail:errors": "wrangler tail --status error",
     "generate-secret": "node scripts/generateEntitySecret.js",
     "register-secret": "node scripts/registerEntitySecret.js",
