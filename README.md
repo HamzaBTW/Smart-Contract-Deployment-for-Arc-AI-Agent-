@@ -10,6 +10,46 @@
 
 ## ⚡ Quick Start (5 Minutes)
 
+### 🎭 Option A: Quick Demo (No Wallet Creation Needed!)
+
+Perfect for presentations and testing - uses pre-configured test wallets:
+
+```bash
+# 1. Copy demo environment (includes 6 test wallets)
+cp demo/.env.demo .env
+
+# 2. Fund 3 demo wallets from faucet
+# Visit: https://faucet.circle.com/
+# Fund these addresses with testnet USDC:
+#   - Owner: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (~0.1 USDC)
+#   - User 1: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC (~10 USDC)
+#   - User 2: 0x90F79bf6EB2c4f870365E785982E1f101E93b906 (~10 USDC)
+
+# 3. Check balances
+npm run check-wallet
+
+# 4. Compile and deploy
+npm run compile
+npm run deploy:contract:testnet
+
+# 5. Add CONTRACT_ADDRESS to .env
+
+# 6. Run demo scripts
+node demo/1-approve-usdc.js
+node demo/2-create-subscriptions.js
+node demo/3-process-payments.js
+node demo/4-send-tips.js
+node demo/5-check-balances.js
+```
+
+📖 **[Complete Demo Guide →](./demo/DEMO_GUIDE.md)**
+
+⚠️ **Note:** Demo wallets use public test keys from Hardhat. NEVER send real funds!
+
+### 🚀 Option B: Production Setup
+
+For real deployment with your own wallets:
+
 ```bash
 # 1. Install Wrangler CLI
 npm install -g wrangler
@@ -46,26 +86,11 @@ npm run deploy
 
 ✅ **Live at:** `https://arc-ai-agent.your-subdomain.workers.dev`
 
-### Optional: Deploy Smart Contracts with AI Agent Autonomy
-
-```bash
-# 1. Configure .env with wallet details
-PRIVATE_KEY=your_deployer_private_key
-AGENT_WALLET_ADDRESS=0xYourAgentWalletAddress
-
-# 2. Get testnet USDC from faucet
-# Visit: https://faucet.arc.foundation/
-
-# 3. Deploy contract
-npm run deploy:contract:testnet
-
-# 📖 Full guide: contracts/AI_AGENT_SETUP.md
-```
-
 ---
 
 ## 📚 Documentation
 
+- **[demo/DEMO_GUIDE.md](./demo/DEMO_GUIDE.md)** - 🎭 **Quick demo with pre-configured wallets**
 - **[CREDENTIALS.md](./CREDENTIALS.md)** - Complete credentials setup guide
 - **[QUICK_START.md](./QUICK_START.md)** - 5-minute deployment guide
 - **[API.md](./API.md)** - API endpoints reference
@@ -173,7 +198,18 @@ modifier onlyAgent() {
 2. **AI Agent Wallet** - Authorized to trigger automated payments
 3. **USDC Token Address** - Payment token on Arc
 
-**Quick Setup:**
+**Quick Demo Setup (No Wallet Creation!):**
+```bash
+# Use pre-configured test wallets
+cp demo/.env.demo .env
+npm run check-wallet
+npm run compile
+npm run deploy:contract:testnet
+# Run demo scripts in demo/ folder
+```
+📖 **[Complete Demo Guide →](./demo/DEMO_GUIDE.md)**
+
+**Production Setup:**
 ```bash
 # 1. Check wallet setup and balances
 npm run check-wallet
